@@ -27,7 +27,7 @@ lm/
     └── PlotCorrelators.sh # Gnuplot visualization script
 ```
 
-The two subdirectories (`monodisperse/` and `binary/`) are independent programs that share the same `marquardt.c` fitting code.
+The two subdirectories (`monodisperse/` and `binary/`) are independent programs with near-identical `marquardt.c` fitting code (see differences below).
 
 ## Build System
 
@@ -36,6 +36,7 @@ Each subdirectory has its own `makefile`. Build with:
 ```sh
 cd monodisperse && make    # builds ./static
 cd binary && make          # builds ./static
+make clean                 # removes built executable
 ```
 
 **Compiler flags**: `-Wall -pedantic -funroll-loops -std=c99`
@@ -111,7 +112,10 @@ The solver writes correlation function data to text files:
 - **No linter config** — relies on `-Wall -pedantic` compiler warnings
 - **Comments are partially in German** — legacy from the original diploma thesis
 - **No package manager** — dependencies are system-level (install GSL via your OS package manager)
-- The `marquardt.c` files are identical between `monodisperse/` and `binary/`
+- The `marquardt.c` files are **not identical** between `monodisperse/` and `binary/`. Key differences:
+  - `lm_evaluate_default` declaration: commented out in monodisperse, active in binary
+  - `#ifdef DEBUG` output: commented out in monodisperse, active in binary
+  - **Convergence tolerance**: `epsilon = 1.e-14` (monodisperse) vs `1.e-10` (binary) — factor 10,000 difference in Marquardt precision
 
 ## Conventions for AI Assistants
 
