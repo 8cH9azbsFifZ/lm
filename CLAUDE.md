@@ -20,12 +20,18 @@ lm/
 │   ├── makefile
 │   ├── static.c           # Main program (~1,700 lines)
 │   └── marquardt.c        # Marquardt fitting algorithm (~1,400 lines)
-└── binary/                # Binary mixture solver
-    ├── makefile
-    ├── static.c           # Main program (~2,300 lines)
-    ├── marquardt.c        # Marquardt fitting algorithm (~1,400 lines)
-    └── PlotCorrelators.sh # Gnuplot visualization script
+├── binary/                # Binary mixture solver
+│   ├── makefile
+│   ├── static.c           # Main program (~2,300 lines)
+│   ├── marquardt.c        # Marquardt fitting algorithm (~1,400 lines)
+│   └── PlotCorrelators.sh # Gnuplot visualization script
+├── mct/                   # MCT non-ergodicity parameters (2006 listing, QUAD switch)
+├── tests/                 # run_tests.py [--full] + fixtures (thesis data)
+├── openspec/              # spec-driven changes
+└── ERRATUM.md             # 2026 recomputation: corrections and fixed defects
 ```
+
+**Before changing numerics, read ERRATUM.md** and run `python3 tests/run_tests.py --full`.
 
 The two subdirectories (`monodisperse/` and `binary/`) are independent programs with near-identical `marquardt.c` fitting code (see differences below).
 

@@ -1,0 +1,7 @@
+monodisperse/static
+binary/static
+mct/nep
+mct/nep_2006
+*.dat
+!tests/data/*.dat
+__pycache__/
