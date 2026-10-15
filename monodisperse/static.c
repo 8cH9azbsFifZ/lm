@@ -511,7 +511,7 @@ void pq_init (long double *r_i_a, unsigned int nu, long double *r_, unsigned int
 			for (i = 0; i < gitter; i++) {
 				P_[n][i] = 0.0;
 				if (i_[n-1] <= i && i <= i_[n]) P_[n][i] = fabsl ((long double) (i-i_[n-1]) / (i_[n-1]-i_[n]));
-				else if (i_[n] <= i && i <= i_[n+1]) P_[n][i] = fabsl ((long double) (i_[n+1]-i) / (i_[n+1]-i_[n]));
+				else if (n+1 < nu && i_[n] <= i && i <= i_[n+1]) P_[n][i] = fabsl ((long double) (i_[n+1]-i) / (i_[n+1]-i_[n]));
 			}
 		}
 
@@ -677,13 +677,15 @@ void return_mayer (long double *mayer, long double *r_, long double *Vr, unsigne
 	long double mu_ = 1.0e-7;		// mü0/4pi
 	long double T = temperature;
 	long double B = b_field;
-	long double r = 2.35e-6;			// Teilchenradius
+	long double r = 1.4e-6;	// 2026: Radius der Diplomarbeitsdaten (sigma = 2.8 um); vorher 2.35e-6.
+	/* chi = 6.2e-12 reproduziert die gespeicherten Mayerfunktionen der Arbeit exakt;
+	 * der Text der Arbeit nennt 6.6e-12 (kleine Teilchen, Koenig 2005). Siehe ERRATUM.md. */			// Teilchenradius
 
 	long double sigma = r+r;		// Teilchendurchmesser
 	double norm = powl (sigma,-3.0);	// Normierung auf Teilchendurchmesser
 	
 	long double V_ = -1.0*mu_*chi*chi*B*B/(kb*T)*norm;	// Reduziertes Potential
-	out ("\n-> Reduziertes Potential: V:%g", V_);
+	out ("\n-> Reduziertes Potential: V:%g", (double)V_);
 
 	// Vr(r) & Mayer(r)
 #if SYSTEM == 1	// Harte Scheibchen
@@ -713,8 +715,8 @@ void return_mayer (long double *mayer, long double *r_, long double *Vr, unsigne
 	}
 #endif
 	out (" mittlerer Abstand:%g", pow(density,-.5));
-	out (" Vk(r_):%g", Vr[find_i(r_,pow(density,-.5)/kb,(int)gitter)]);
-	out ("\n-> Gamma: %g", 10e-7/(kb*T)*B*B*chi*chi*powl(density*powl(sigma,-2.0)*M_PIl,3.0/2.0));
+	out (" Vk(r_):%g", (double)Vr[find_i(r_,pow(density,-.5),(int)gitter)]);
+	out ("\n-> Gamma: %g", (double)(mu_/(kb*T)*B*B*chi*chi*powl(density*powl(sigma,-2.0)*M_PIl,3.0/2.0)));	// 2026: mu0/4pi = 1e-7 (vorher 10e-7)
 }
 
 
@@ -1216,7 +1218,7 @@ int main (int argc, char* argv[]) {
 			for (i = 0; i < gitter; i++) {
 				P_[n][i] = 0.0;
 				if (i_[n-1] <= i && i <= i_[n]) P_[n][i] = fabsl ((long double) (i-i_[n-1]) / (i_[n-1]-i_[n]));
-				if (i_[n] <= i && i <= i_[n+1])	P_[n][i] = fabsl ((long double) (i_[n+1]-i) / (i_[n+1]-i_[n]));
+				if (n+1 < nu && i_[n] <= i && i <= i_[n+1])	P_[n][i] = fabsl ((long double) (i_[n+1]-i) / (i_[n+1]-i_[n]));
 			}
 		}
 
@@ -1472,6 +1474,8 @@ int main (int argc, char* argv[]) {
 	// Hauptschleife
 	out ("\n-> Hauptschleife");
 	unsigned int pic_max = 10000;
+	if (getenv ("LM_PICMAX"))	// 2026: optionale Iterationsgrenze (Tests)
+		pic_max = (unsigned int)atoi (getenv ("LM_PICMAX"));
 	unsigned int out_period = 1;	// Periode zum Rausschreiben
 	double out_period_norm = 1e-1;
 	do {
@@ -1483,7 +1487,12 @@ int main (int argc, char* argv[]) {
 			data.comp.fine[i] = comp.fine[i];	// Feinanteil für LM; Grobanteil wird ja eben variiert
 	
 		out (" lm %d ", nu);
-		lm_minimize (nu, nu, (double *)comp.coarse, lm_evaluate_default, lm_print_default, &data, &control);
+		{	// 2026: lm_minimize erwartet double*, comp.coarse ist long double*
+			double coarse_d[nu];
+			for (n = 0; n < nu; n++) coarse_d[n] = (double)comp.coarse[n];
+			lm_minimize (nu, nu, coarse_d, lm_evaluate_default, lm_print_default, &data, &control);
+			for (n = 0; n < nu; n++) comp.coarse[n] = (long double)coarse_d[n];
+		}
 
 		norm_fine_old = norm_fine;
 		norm_fine = norm_sum = 0.0;
@@ -1492,7 +1501,7 @@ int main (int argc, char* argv[]) {
 			norm_sum += data.decomp.fine[i];
 	//		comp.fine[i] = data.decomp.fine[i];
 		}
-		norm_fine = sqrt (norm_fine)/norm_sum;
+		norm_fine = sqrt (norm_fine)/fabsl (norm_sum);	// 2026: |Summe|, sonst Scheinkonvergenz bei negativer Summe
 		out (" fine: %g", (double)norm_fine);
 		
 		if (norm_fine_old < norm_fine) {

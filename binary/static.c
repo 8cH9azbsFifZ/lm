@@ -500,7 +500,7 @@ void pq_init (double r_i_a[], unsigned int nu, t_matrix r_, t_matrix P_, t_matri
 			for (i = 0; i < gitter; i++) {
 				P__[n][i] = 0.0;
 				if (i_[n-1] <= i && i <= i_[n]) P__[n][i] = (double)(i-i_[n-1])/(-i_[n-1]+i_[n]);
-				else if (i_[n] <= i && i <= i_[n+1]) P__[n][i] = (double)(i_[n+1]-i)/(i_[n+1]-i_[n]);
+				else if (n+1 < nu && i_[n] <= i && i <= i_[n+1]) P__[n][i] = (double)(i_[n+1]-i)/(i_[n+1]-i_[n]);
 			}
 		}
 
@@ -1710,7 +1710,9 @@ int main (int argc, char* argv[]) {
 	//Packungsdichte!
 #ifdef PACKING_FRACTION
 	out ("\n-> Packingfraction: %lf", p);
+#if SYSTEM != 1 && SYSTEM != 2 && SYSTEM != 7	// 2026: dort ist delta bereits definiert
 	double delta = 0.59574468;
+#endif
 	double p_new = (p/(double)(M_PIl))*pow((delta+1.0),2.0)/(x_s*delta*delta+x_b);
 	out (" -> ns_12^2=%lf", p_new);
 	p = p_new;
